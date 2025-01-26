@@ -47,6 +47,12 @@ static bool pattern_matches_substring(char *pattern, size_t pattern_len, char *s
     // incremented if successful match so we know where to continue
     size_t s_pos = 0;
     for (size_t p_pos = 0; p_pos < pattern_len; p_pos++) {
+        assert(s_pos <= str_len);
+        if (s_pos == str_len) {
+            // we got to end of string but the full pattern wasn't matched
+            return false;
+        }
+
         struct CurrentMatch match;
         if (pattern[p_pos] == '.') {
             match.type = Wildcard;
@@ -75,13 +81,7 @@ static bool pattern_matches_substring(char *pattern, size_t pattern_len, char *s
         s_pos += ret;
     }
 
-    assert(s_pos <= str_len);
-    if (s_pos == str_len) {
-        // the whole string passed
-        return true;
-    } else {
-        return false;
-    }
+    return s_pos == str_len;
 }
 
 // future optimization: find .*'s at beginning/end and just glob the rest of the string if present
