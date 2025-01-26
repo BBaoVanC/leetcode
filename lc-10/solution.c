@@ -5,27 +5,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum CurrentMatchType {
+enum MatchType {
     Wildcard,
     Char,
 };
-struct CurrentMatch {
-    enum CurrentMatchType type;
+struct Match {
+    enum MatchType type;
     union {
         char c;
     };
 };
 
 enum Quantifier {
-    None,
-    Greedy,
+    None, // no quantifier, just one exact match
+    ZeroOrMore, // *
+    OneOrMore, // +
 };
 
-static bool matches_char(struct CurrentMatch current_match, char c) {
+struct Unit {
+    struct Match match;
+    enum Quantifier quantifier;
+};
+
+static bool matches_char(struct Match current_match, char c) {
     return (current_match.type == Wildcard) || (c == current_match.c);
 }
 // returns -1 if match failed, otherwise the amount of chars the token matched successfully
-static int match_token_on_substring(struct CurrentMatch match, enum Quantifier quantifier, char *str, size_t str_len) {
+static int match_token_on_substring(struct Match match, enum Quantifier quantifier, char *str, size_t str_len) {
     if (quantifier == None) {
         if (matches_char(match, str[0])) {
             return 1;
@@ -53,7 +59,7 @@ static bool pattern_matches_substring(char *pattern, size_t pattern_len, char *s
             return false;
         }
 
-        struct CurrentMatch match;
+        struct Match match;
         if (pattern[p_pos] == '.') {
             match.type = Wildcard;
         } else {
@@ -88,6 +94,26 @@ static bool pattern_matches_substring(char *pattern, size_t pattern_len, char *s
 bool isMatch(char *s, char *p) {
     size_t s_len = strlen(s);
     size_t p_len = strlen(p);
+
+    {
+        size_t s_pos = 0;
+        while (s_pos < s_len) {
+            struct Match match_new;
+            char c = s[s_pos];
+            switch (c) {
+                case '*':
+                    match_new.type = Wildcard;
+                    break;
+                case '+':
+                    match_new.type = Plus;
+                    break;
+                default:
+                    match_new.type = Char;
+                    match_new.char = c;
+                    break;
+            }
+        }
+    }
     return pattern_matches_substring(p, p_len, s, s_len);
 }
 
