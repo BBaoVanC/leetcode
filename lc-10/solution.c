@@ -19,7 +19,7 @@ struct CurrentMatch {
 enum Quantifier {
     None,
     Greedy,
-}
+};
 
 static bool matches_char(struct CurrentMatch current_match, char c) {
     return (current_match.type == Wildcard) || (c == current_match.c);
@@ -37,6 +37,7 @@ static int match_token_on_substring(struct CurrentMatch match, enum Quantifier q
         while ((s_pos < str_len) && (matches_char(match, str[s_pos]))) {
             s_pos++;
         }
+        return s_pos;
     } else {
         // unreachable
         abort();
@@ -55,22 +56,23 @@ static bool pattern_matches_substring(char *pattern, size_t pattern_len, char *s
         }
 
         size_t p_pos_next = p_pos + 1;
-        if ((p_pos_next < pattern_len) && pattern[p_pos_next] == '*') {
+        enum Quantifier quantifier;
+        // no bounds check needed because the string will have null at the end
+        if (pattern[p_pos_next] == '*') {
             // don't try and match a '*' on the next iteration
             p_pos++;
-
-            // move s_pos forward until the quantifier stops matching
-            // fine if this immediately breaks because * also matches 0
-            for (; s_pos < str_len; s_pos++) {
-                if (!matches_char(match, str[s_pos])) {
-                    break;
-                }
-            }
+            quantifier = Greedy;
         } else {
-            if (!matches_char(match, str[s_pos])) {
-                return false;
-            }
+            quantifier = None;
         }
+
+        char *substr = str + s_pos;
+        size_t substr_len = str_len - s_pos;
+        int ret = match_token_on_substring(match, quantifier, substr, substr_len);
+        if (ret < 0) {
+            return false;
+        }
+        s_pos += ret;
     }
 
     assert(s_pos <= str_len);
@@ -86,14 +88,7 @@ static bool pattern_matches_substring(char *pattern, size_t pattern_len, char *s
 bool isMatch(char *s, char *p) {
     size_t s_len = strlen(s);
     size_t p_len = strlen(p);
-    for (size_t s_pos = 0; s_pos < s_len; s_pos++) {
-        char *substr = s + s_pos;
-        size_t substr_len = s_len - s_pos;
-        if (pattern_matches_substring(p, p_len, substr, substr_len)) {
-            return true;
-        }
-    }
-    return false;
+    return pattern_matches_substring(p, p_len, s, s_len);
 }
 
 int main(int argc, char *argv[]) {
