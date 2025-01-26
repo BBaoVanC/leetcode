@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 enum CurrentMatchType {
@@ -60,7 +61,9 @@ bool isMatch(char *s, char *p) {
     size_t s_len = strlen(s);
     size_t p_len = strlen(p);
     for (size_t s_pos = 0; s_pos < s_len; s_pos++) {
-        if (pattern_matches_substring(p, p_len, s, s_len)) {
+        char *substr = s + s_pos;
+        size_t substr_len = s_len - s_pos;
+        if (pattern_matches_substring(p, p_len, substr, substr_len)) {
             return true;
         }
     }
